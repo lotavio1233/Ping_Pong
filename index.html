@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogo Ping-Pong</title>
+    <style>
+        *{
+        overflow: hidden; 
+        margin: 0;
+        padding: 0;
+        }
+    </style>
+</head>
+<body>
+    <canvas></canvas>
+    <script>
+        const canvasEl = document.querySelector("canvas")
+        const canvasCtx = canvasEl.getContext("2d") //declarando o conteudo
+
+        const lineWidth = 15
+
+        //declarando objetos
+        const mouse = {x:0, y:0}
+
+        const field = { //campo
+            w: window.innerWidth, //largura
+            h: window.innerHeight, //altura
+            draw: function(){
+                canvasCtx.fillStyle = "#008000" //seleciona a cor
+                canvasCtx.fillRect(0 , 0, this.w, this.h) // seleciona (onde sai ponto X, onde sai Y, largura, altura)
+            }, // o this serve para usar a constante que esta dentro desse obj
+        }
+
+        const line = { //linha central
+            w: lineWidth,
+            h: window.innerHeight,
+            draw: function(){
+                canvasCtx.fillStyle = "#FFFFFF"
+                canvasCtx.fillRect(window.innerWidth / 2 - lineWidth / 2, 0 , this.w, this.h)
+            //x=lagura total /2 - espessura linha /2 para pegar o meio certo
+            },
+        }
+
+        const leftPaddle = { //raquete esquerda
+            x: 10,
+            y: 0, //usamos x e y pois vai se mover
+            w: lineWidth,
+            h: 200,
+           _move : function(){
+                this.y = mouse.y - this.h/2
+           },
+            draw: function(){
+                canvasCtx.fillRect(10, this.y , lineWidth, 200)
+                 //x!= 0 para descolar da borda, a altura e onde inicia o Y tanto faz, pois a rawuete vai se mover
+                
+                 this._move()    
+            },
+        }
+
+        const rightPaddle = {
+            x: window.innerWidth -lineWidth - 10,
+            y: 120,
+            w: lineWidth,
+            h: 200,
+            speed: 3,
+
+            _move: function(){
+                if(this.y + this.h / 2 < ball.y + ball.r){
+                    this.y += this.speed
+                } else{
+                    this.y -= this.speed
+                }
+            },
+            draw: function(){
+                canvasCtx.fillRect(window.innerWidth -lineWidth - 10, this.y , lineWidth, 200)
+
+                this._move()
+            }
+        }
+
+        const score = {
+            human: 0,
+            computer: 0,
+            draw: function(){
+                canvasCtx.font = "Bold 72px Arial" //font
+                canvasCtx.textAlign = "center" // centro da tela
+                canvasCtx.textBaseline = "top" //top da tela
+                canvasCtx.fillStyle = "#FFFF00" //cor
+                canvasCtx.fillText(this.human, window.innerWidth/4, 50) //texto, posicao de inicio em x, posicao inicio em y
+                canvasCtx.fillText(this.computer, window.innerWidth/4*3, 50) // placar direita
+            }
+        }
+
+        const ball = {
+            x: 200,
+            y: 300,
+            r: 20,   
+            speed: 7,
+            directionX: 1,
+            directionY: 1,
+            _calcPosition: function(){
+
+                if(this.x > field.w - this.r - rightPaddle.w - 10){
+                    if(this.y + this.r > rightPaddle.y && this.y < rightPaddle.y + rightPaddle.h){
+                        this.directionX *= -1
+                    } else {
+                        score.human ++
+                        this.x = field.w/2
+                        this.y = field.h/2
+                        this.speed +=3
+                        rightPaddle.speed +=4
+                    }
+                }
+
+                if(this.x < 0 + this.r + leftPaddle.w + 10){
+                    if(this.y + this.r > leftPaddle.y && this.y < leftPaddle.y + leftPaddle.h){
+                        this.directionX *= -1
+                    } else {
+                        score.computer ++
+                        this.x = field.w/2
+                        this.y = field.h/2
+                        this.speed +=3
+                        rightPaddle.speed +=4
+                    }
+                }
+
+                if((this.y > field.h - this.r) || (this.y - this.r < 0)){
+                    this.directionY *= -1
+                }
+            },
+            _move: function() { //usa-se _ para representar funcao interna, !!sem necessidade!!
+                this.x += this.directionX * this.speed
+                this.y += this.directionY * this.speed
+            },
+            draw: function(){
+                canvasCtx.fillStyle = "#FFFFFF"
+                canvasCtx.beginPath()
+                canvasCtx.arc(this.x, this.y, 20, 0 , 2 * Math.PI, false) 
+                canvasCtx.fill()
+
+                this._move() //para chamar a funcao que movera a bola,
+                this._calcPosition()
+                //para criar um arco precisa do beginpath e do fill apos o arco
+                /* (valor central x, valor central y, raio, ponto de inicio do arco, conta para o arco dar uma volta,
+                 false para roda sentido horario)*/
+            },
+        }
+
+        function setup(){
+            canvasEl.width = canvasCtx.width = window.innerWidth //declarando a largura do canvas e da declaracao
+            canvasEl.height = canvasCtx.height = window.innerHeight //window. ... declara tamanho da tela do pc
+        } //ao inves de window. ...., posso usar field.w e field.h do objeto campo (field)
+
+        function draw(){
+           //chamando as funcoes dos objetos
+            field.draw() //campo
+            line.draw() //linha central
+            leftPaddle.draw() // raquete esq
+            rightPaddle.draw() // raquete dir
+            score.draw() // placar
+            ball.draw() // bola
+        }
+        setup()
+        draw()
+
+        window.setInterval(draw, 1000 / 60) //funcao que queremos executar, de quanto em quanto tempo = 60x por segundo
+       
+        canvasEl.addEventListener('mousemove', function(e){
+            mouse.x = e.pageX
+            mouse.y = e.pageY
+        })
+    </script>
+</body>
+</html>
